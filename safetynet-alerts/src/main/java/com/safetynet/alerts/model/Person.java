@@ -6,10 +6,13 @@ import java.util.Objects; // Importe la classe utilitaire Objects (méthodes equ
  * Représentation d'une personne telle que décrite dans le tableau
  * persons du fichier data.json
  * Les champs sont strictement alignés sur le schéma JSON afin de
- * garantir une correspondance 1‑pour‑1 pour les endpoints de reporting
+ * garantir une correspondance champ par champ pour les endpoints de reporting
  * et les opérations CRUD.
  */
 public class Person { // Déclaration de la classe publique Person
+
+    // attributs privés pour respecter l’encapsulation, puis on expose des getters/setters (dé)sérialiser proprement.
+
     /** Prénom de la personne. */
     private String firstName; // Prénom. private impose l’encapsulation (accès via getters/setters)
     /** Nom de famille de la personne. */
@@ -49,11 +52,20 @@ public class Person { // Déclaration de la classe publique Person
     }
 
     // Getters / Setters
+    // Désérialiser = prendre du JSON et remplir un objet Java (Person) avec ces valeurs.
+    // Sérialiser = prendre un objet Java et produire du JSON pour la réponse HTTP ou pour écrire un fichier.
+    // Dans notre cas, on fait surtout de la désérialisation au démarrage :
+    // on lit data.json (dans src/main/resources)
+    // et on remplit nos objets Java (Person, FirestationMapping, MedicalRecord).
+    // Ensuite, on stocke ces objets dans le repository mémoire pour que les services/contrôleurs puissent travailler dessus
 
     /** @return le prénom */
-    public String getFirstName() { return firstName; } // Getter JavaBeans standard
+    public String getFirstName() { return firstName; } // Getter sans paramètre qui renvoie la valeur du champ privé firstName.
+                                                      // Sert surtout à la sérialisation (objet → JSON) et à lire la valeur côté code
+
     /** @param firstName le prénom */
-    public void setFirstName(String firstName) { this.firstName = firstName; } // Setter correspondant.
+    public void setFirstName(String firstName) // Setter qui ne retourne rien (void) et reçoit une chaîne en paramètre pour affecter le champ privé.
+    { this.firstName = firstName; }           // C’est lui que Jackson appelle pour hydrater l’objet depuis le JSON.
 
 
     /** @return le nom */
