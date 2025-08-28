@@ -1,6 +1,6 @@
-package com.safetynet.alerts.model;
+package com.safetynet.alerts.model; // Déclare le package Java. Ça place la classe dans l’espace com.safetynet.alerts.model, cohérent avec l’architecture MVC : model = couche domaine
 
-import java.util.Objects;
+import java.util.Objects; // Importe la classe utilitaire Objects (méthodes equals/hash null-safe) utilisée dans equals et hashCode
 
 /**
  * Représentation d'une personne telle que décrite dans le tableau
@@ -9,24 +9,24 @@ import java.util.Objects;
  * garantir une correspondance 1‑pour‑1 pour les endpoints de reporting
  * et les opérations CRUD.
  */
-public class Person {
+public class Person { // Déclaration de la classe publique Person
     /** Prénom de la personne. */
-    private String firstName;
+    private String firstName; // Prénom. private impose l’encapsulation (accès via getters/setters)
     /** Nom de famille de la personne. */
-    private String lastName;
+    private String lastName; // Nom de famille. Même logique.
     /** Adresse postale de la personne. */
     private String address;
     /** Ville de résidence. */
     private String city;
     /** Code postal, conservé sous forme de chaîne pour coller au JSON. */
-    private String zip;
+    private String zip; // Code postal stocké en String (et non int) pour respecter le JSON et éviter les soucis de zéros initiaux / formats non numériques
     /** Numéro de téléphone. */
-    private String phone;
+    private String phone; // Numéro de téléphone (String aussi : tirets, espaces, indicatifs possibles)
     /** Adresse e‑mail. */
     private String email;
 
 
-    public Person() {}
+    public Person() {}// Constructeur par défaut sans argument. Indispensable pour Jackson/Spring qui instancient l’objet par réflexion avant de setter les champs.
     /**
      * Constructeur d'initialisation complet.
      * @param firstName le prénom
@@ -38,7 +38,7 @@ public class Person {
      * @param email l'adresse e‑mail
      */
     public Person(String firstName, String lastName, String address, String city,
-                  String zip, String phone, String email) {
+                  String zip, String phone, String email) { // Constructeur d’initialisation : pratique pour créer un objet complet en une ligne (tests, fixtures, etc.)
         this.firstName = firstName;
         this.lastName = lastName;
         this.address = address;
@@ -48,10 +48,12 @@ public class Person {
         this.email = email;
     }
 
+    // Getters / Setters
+
     /** @return le prénom */
-    public String getFirstName() { return firstName; }
+    public String getFirstName() { return firstName; } // Getter JavaBeans standard
     /** @param firstName le prénom */
-    public void setFirstName(String firstName) { this.firstName = firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; } // Setter correspondant.
 
 
     /** @return le nom */
@@ -90,6 +92,8 @@ public class Person {
     public void setEmail(String email) { this.email = email; }
 
 
+
+    // equals / hashCode
     /**
      * Deux personnes sont considérées égales si elles partagent le même
      * couple <code>firstName</code> / <code>lastName</code>.
@@ -97,21 +101,22 @@ public class Person {
      * @param o autre objet à comparer
      * @return {@code true} si identités égales, sinon {@code false}
      */
-    @Override public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Person)) return false;
-        Person person = (Person) o;
-        return Objects.equals(firstName, person.firstName) &&
-                Objects.equals(lastName, person.lastName);
+    @Override public boolean equals(Object o) { // Indique qu’on redéfinit equals depuis java.lang.Object
+        if (this == o) return true; // Optimisation : mêmes références ⇒ mêmes objets
+        if (!(o instanceof Person)) return false; // Sécurité de type : si ce n’est pas une Person, ce n’est pas égal
+        Person person = (Person) o; // Cast (on vient de vérifier le type).
+        return Objects.equals(firstName, person.firstName)
+               Objects.equals(lastName, person.lastName);  // Comparaison null-safe des deux champs d’identité
     }
 
+
     /** @return le hash basé sur <code>firstName</code> et <code>lastName</code> */
-    @Override public int hashCode() { return Objects.hash(firstName, lastName); }
+    @Override public int hashCode() { return Objects.hash(firstName, lastName); } // Cohérence contrat equals/hashCode : mêmes champs que equals. Indispensable pour le bon comportement en HashSet / HashMap.
 
 
     /** @return représentation textuelle utile aux logs de debug */
-    @Override public String toString() {
-        return "Person{" +
+    @Override public String toString() { // Redéfinition de toString utile en logs/debug (affichage lisible des valeurs).
+        return "Person{" +                             // Concaténation champ par champ.
                 "firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", address='" + address + '\'' +
