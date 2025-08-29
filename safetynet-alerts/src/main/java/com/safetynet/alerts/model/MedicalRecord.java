@@ -29,7 +29,7 @@ public class MedicalRecord {
 
     /** Date de naissance au format MM/dd/yyyy. */
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "MM/dd/yyyy")
-    private LocalDate birthdate;
+    private String birthdate;
 
 
     /** Liste des médicaments. */
@@ -60,9 +60,9 @@ public class MedicalRecord {
     public void setLastName(String lastName) { this.lastName = lastName; }
 
     /** @return la date de naissance */
-    public LocalDate getBirthdate() { return birthdate; }
+    public String getBirthdate() { return birthdate; }
     /** @param birthdate la date de naissance */
-    public void setBirthdate(LocalDate birthdate) { this.birthdate = birthdate; }
+    public void String(String birthdate) { this.birthdate = birthdate; }
 
 
     /** @return la liste des médicaments */

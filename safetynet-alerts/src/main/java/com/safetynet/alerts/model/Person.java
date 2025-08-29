@@ -62,7 +62,6 @@ public class Person { // Déclaration de la classe publique Person
     /** @return le prénom */
     public String getFirstName() { return firstName; } // Getter sans paramètre qui renvoie la valeur du champ privé firstName.
                                                       // Sert surtout à la sérialisation (objet → JSON) et à lire la valeur côté code
-
     /** @param firstName le prénom */
     public void setFirstName(String firstName) // Setter qui ne retourne rien (void) et reçoit une chaîne en paramètre pour affecter le champ privé.
     { this.firstName = firstName; }           // C’est lui que Jackson appelle pour hydrater l’objet depuis le JSON.
@@ -113,12 +112,12 @@ public class Person { // Déclaration de la classe publique Person
      * @param o autre objet à comparer
      * @return {@code true} si identités égales, sinon {@code false}
      */
-    @Override public boolean equals(Object o) { // Indique qu’on redéfinit equals depuis java.lang.Object
-        if (this == o) return true; // Optimisation : mêmes références ⇒ mêmes objets
-        if (!(o instanceof Person)) return false; // Sécurité de type : si ce n’est pas une Person, ce n’est pas égal
-        Person person = (Person) o; // Cast (on vient de vérifier le type).
+    @Override public boolean equals(Object o) {                  // Indique qu’on redéfinit equals depuis java.lang.Object
+        if (this == o) return true;                             // Optimisation : mêmes références ⇒ mêmes objets
+        if (!(o instanceof Person)) return false;              // Sécurité de type : si ce n’est pas une Person, ce n’est pas égal
+        Person person = (Person) o;                           // Cast (on vient de vérifier le type).
         return Objects.equals(firstName, person.firstName)
-               Objects.equals(lastName, person.lastName);  // Comparaison null-safe des deux champs d’identité
+            && Objects.equals(lastName, person.lastName);   // Comparaison null-safe des deux champs d’identité
     }
 
 
@@ -127,7 +126,7 @@ public class Person { // Déclaration de la classe publique Person
 
 
     /** @return représentation textuelle utile aux logs de debug */
-    @Override public String toString() { // Redéfinition de toString utile en logs/debug (affichage lisible des valeurs).
+    @Override public String toString() {                // Redéfinition de toString utile en logs/debug (affichage lisible des valeurs).
         return "Person{" +                             // Concaténation champ par champ.
                 "firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
