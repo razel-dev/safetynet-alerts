@@ -51,7 +51,7 @@ public class Person { // Déclaration de la classe publique Person
         this.email = email;
     }
 
-    // Getters / Setters
+    // Getters / Setters = etablissement de regles d'acces aux données
     // Désérialiser = prendre du JSON et remplir un objet Java (Person) avec ces valeurs.
     // Sérialiser = prendre un objet Java et produire du JSON pour la réponse HTTP ou pour écrire un fichier.
     // Dans notre cas, on fait surtout de la désérialisation au démarrage :
@@ -112,21 +112,25 @@ public class Person { // Déclaration de la classe publique Person
      * @param o autre objet à comparer
      * @return {@code true} si identités égales, sinon {@code false}
      */
-    @Override public boolean equals(Object o) {                  // Indique qu’on redéfinit equals depuis java.lang.Object
+    @Override
+    public boolean equals(Object o) {                            // Indique qu’on redéfinit equals depuis java.lang.Object
         if (this == o) return true;                             // Optimisation : mêmes références ⇒ mêmes objets
         if (!(o instanceof Person)) return false;              // Sécurité de type : si ce n’est pas une Person, ce n’est pas égal
-        Person person = (Person) o;                           // Cast (on vient de vérifier le type).
+
         return Objects.equals(firstName, person.firstName)
             && Objects.equals(lastName, person.lastName);   // Comparaison null-safe des deux champs d’identité
     }
 
 
     /** @return le hash basé sur <code>firstName</code> et <code>lastName</code> */
-    @Override public int hashCode() { return Objects.hash(firstName, lastName); } // Cohérence contrat equals/hashCode : mêmes champs que equals. Indispensable pour le bon comportement en HashSet / HashMap.
+    @Override
+    public int hashCode()
+    { return Objects.hash(firstName, lastName); } // Cohérence contrat equals/hashCode : mêmes champs que equals. Indispensable pour le bon comportement en HashSet / HashMap.
 
 
     /** @return représentation textuelle utile aux logs de debug */
-    @Override public String toString() {                // Redéfinition de toString utile en logs/debug (affichage lisible des valeurs).
+    @Override
+    public String toString() {                // Redéfinition de toString utile en logs/debug (affichage lisible des valeurs).
         return "Person{" +                             // Concaténation champ par champ.
                 "firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +

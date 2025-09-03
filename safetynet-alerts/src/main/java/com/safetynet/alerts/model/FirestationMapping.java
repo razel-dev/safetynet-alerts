@@ -54,7 +54,7 @@ public class FirestationMapping {
     @Override public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof FirestationMapping)) return false;
-        FirestationMapping that = (FirestationMapping) o;
+
         return Objects.equals(address, that.address) &&
                 Objects.equals(station, that.station);
     }

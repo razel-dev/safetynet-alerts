@@ -88,7 +88,7 @@ public class MedicalRecord {
     @Override public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof MedicalRecord)) return false;
-        MedicalRecord that = (MedicalRecord) o;
+
         return Objects.equals(firstName, that.firstName) &&
                 Objects.equals(lastName, that.lastName);
     }
