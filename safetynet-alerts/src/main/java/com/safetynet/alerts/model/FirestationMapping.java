@@ -1,25 +1,38 @@
 package com.safetynet.alerts.model;
 
-
-import java.util.Objects;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
- * Association adresse ↔ numéro de caserne telle que décrite dans
- * le tableau firestations du fichier data.json
- * address— adresse couverte par la caserne
- * station— numéro de caserne
+ * Représente l’association adresse ↔ numéro de caserne telle que décrite
+ * dans le tableau firestations du fichier <code>data.json</code>.
+ * Champs :
+ *   <code>address</code> — adresse couverte par la caserne
+ *   <code>station</code> — numéro de caserne (chaîne)
+ * <strong>Identité logique :</strong> (address, station).
+ * Notes d’implémentation :
+ *  L’égalité et le hashCode sont générés par Lombok sur les champs
+ *   <code>address</code> et <code>station</code> via {@link EqualsAndHashCode#of()}.</li>
+ *   Un constructeur sans argument est fourni pour la (dé)sérialisation (Jackson) et les proxys.</li>
 
- *
- * <p><strong>Identité logique :</strong> <code>address+station</code>.</p>
-  */
-
+ */
+@Setter
+@Getter
+@ToString
+@EqualsAndHashCode(of = {"address", "station"})
 public class FirestationMapping {
-    /** Adresse couverte par la caserne. */
+
+    /** Adresse postale couverte par la caserne. */
     private String address;
-    /** Numéro de caserne; conservé en chaîne pour coller au JSON (ex: "3"). */
+
+    /** Numéro de caserne desservant l’adresse (représenté sous forme de chaîne). */
     private String station;
 
-
+    /**
+     * Constructeur sans argument requis par les frameworks (Jackson, Spring, etc.).
+     */
     public FirestationMapping() {}
 
     /**
@@ -31,44 +44,5 @@ public class FirestationMapping {
     public FirestationMapping(String address, String station) {
         this.address = address;
         this.station = station;
-    }
-
-    /** @return l'adresse couverte */
-    public String getAddress() { return address; }
-    /** @param address l'adresse couverte */
-    public void setAddress(String address) { this.address = address; }
-
-
-    /** @return le numéro de caserne (chaîne) */
-    public String getStation() { return station; }
-    /** @param station le numéro de caserne (chaîne) */
-    public void setStation(String station) { this.station = station; }
-
-
-    /**
-     * Identité basée sur le couple <code>address</code>/<code>station</code>.
-     *
-     * @param o autre objet à comparer
-     * @return {@code true} si égaux, sinon {@code false}
-     */
-    @Override public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof FirestationMapping)) return false;
-
-        return Objects.equals(address, that.address) &&
-                Objects.equals(station, that.station);
-    }
-
-
-    /** @return hash basé sur address et station */
-    @Override public int hashCode() { return Objects.hash(address, station); }
-
-
-    /** @return représentation textuelle utile aux logs de debug */
-    @Override public String toString() {
-        return "FirestationMapping{" +
-                "address='" + address + '\'' +
-                ", station='" + station + '\'' +
-                '}';
     }
 }
