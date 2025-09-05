@@ -49,5 +49,6 @@ public class DataLoader {
         }
     }
 
-    private static int size(Collection<?> c) { return c == null ? 0 : c.size(); }
+    private static int size(Collection<?> c)
+    { return c == null ? 0 : c.size(); }
 }
