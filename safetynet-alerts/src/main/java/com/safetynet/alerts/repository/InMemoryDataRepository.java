@@ -21,11 +21,11 @@ public class InMemoryDataRepository implements DataRepository {
     private final Map<String, String>        stationByAddress         = new ConcurrentHashMap<>();
     private final Map<String, MedicalRecord> medicalRecordByPersonKey = new ConcurrentHashMap<>();
 
-
+    // Pour /personInfo & /communityEmail
     private final Map<String, List<Person>>  personsByLastName        = new ConcurrentHashMap<>();
     private final Map<String, Set<String>>   emailsByCity             = new ConcurrentHashMap<>();
 
-    // Snapshot logique de toutes les personnes
+    // Snapshot global de toutes les personnes
     private final List<Person> persons = new ArrayList<>();
 
     // -------------------- Helpers --------------------
@@ -36,12 +36,12 @@ public class InMemoryDataRepository implements DataRepository {
         return norm(first) + "|" + norm(last);
     }
 
-    // -------------------- Init --------------------
+    // -------------------- Init (idempotent) --------------------
     @Override
-    public void init(DataSet dataSet) {
+    public void init(final DataSet dataSet) {
         Objects.requireNonNull(dataSet, "dataSet must not be null");
 
-        // Reset complet (idempotence)
+        // Reset
         personsByAddress.clear();
         addressesByStation.clear();
         stationByAddress.clear();
@@ -51,62 +51,52 @@ public class InMemoryDataRepository implements DataRepository {
         persons.clear();
 
         // -------- Persons --------
-        var ps = dataSet.getPersons();
+        final List<Person> ps = dataSet.getPersons();
         if (ps != null && !ps.isEmpty()) {
-            // snapshot global
             persons.addAll(ps);
 
             // adresse -> personnes
             Map<String, List<Person>> byAddress =
-                    ps.stream().collect(
-                            Collectors.groupingBy(
-                                    p -> norm(p.getAddress()),
-                                    ConcurrentHashMap::new,
-                                    Collectors.toList()
-                            )
-                    );
+                    ps.stream().collect(Collectors.groupingBy(
+                            p -> norm(p.getAddress()),
+                            ConcurrentHashMap::new,
+                            Collectors.toList()
+                    ));
             personsByAddress.putAll(byAddress);
+
 
             // lastName -> personnes
             Map<String, List<Person>> byLastName =
-                    ps.stream().collect(
-                            Collectors.groupingBy(
-                                    p -> norm(p.getLastName()),
-                                    ConcurrentHashMap::new,
-                                    Collectors.toList()
-                            )
-                    );
+                    ps.stream().collect(Collectors.groupingBy(
+                            p -> norm(p.getLastName()),
+                            ConcurrentHashMap::new,
+                            Collectors.toList()
+                    ));
             personsByLastName.putAll(byLastName);
 
             // city -> emails
             Map<String, Set<String>> emailsByCityTmp =
                     ps.stream()
-                            .filter(p -> p.getEmail() != null && !p.getEmail().isBlank())
-                            .collect(
-                                    Collectors.groupingBy(
-                                            p -> norm(p.getCity()),
-                                            ConcurrentHashMap::new,
-                                            Collectors.mapping(
-                                                    Person::getEmail,
-                                                    Collectors.toCollection(ConcurrentHashMap::newKeySet)
-                                            )
-                                    )
-                            );
+                            .filter(p -> p.getEmail() != null )
+                            .collect(Collectors.groupingBy(
+                                    p -> norm(p.getCity()),
+                                    ConcurrentHashMap::new,
+                                    Collectors.mapping(Person::getEmail, Collectors.toCollection(ConcurrentHashMap::newKeySet))
+                            ));
+
             emailsByCity.putAll(emailsByCityTmp);
         }
-
         // -------- Firestations --------
-        var fs = dataSet.getFirestations();
-        if (fs != null && !fs.isEmpty()) {
-            // station(norm) -> adresses (valeurs "raw" pour affichage)
+        final List<FirestationMapping> fs = dataSet.getFirestations();
+        if (!fs.isEmpty()) {
+            // station(norm) -> adresses
             Map<String, Set<String>> addressesByStationTmp =
                     fs.stream().collect(
                             Collectors.groupingBy(
                                     m -> norm(m.getStation()),
-                                    ConcurrentHashMap::new,
                                     Collectors.mapping(
                                             FirestationMapping::getAddress,
-                                            Collectors.toCollection(ConcurrentHashMap::newKeySet)
+                                            Collectors.toSet()
                                     )
                             )
                     );
@@ -118,28 +108,27 @@ public class InMemoryDataRepository implements DataRepository {
                             Collectors.toMap(
                                     m -> norm(m.getAddress()),
                                     m -> norm(m.getStation()),
-                                    (first, second) -> first,
-                                    ConcurrentHashMap::new
+                                    (first, second) -> first      // first-wins si doublon dans le JSON
                             )
                     );
             stationByAddress.putAll(stationByAddressTmp);
         }
 
         // -------- Medical records --------
-        var mrs = dataSet.getMedicalrecords();
-        if (mrs != null && !mrs.isEmpty()) {
-            // (first|last) -> record (last-wins, équivalent d'un put)
+        final List<MedicalRecord> mrs = dataSet.getMedicalrecords();
+        if (!mrs.isEmpty()) {
+            // (first|last) -> record (last-wins)
             Map<String, MedicalRecord> mrByKey =
                     mrs.stream().collect(
                             Collectors.toMap(
                                     mr -> key(mr.getFirstName(), mr.getLastName()),
                                     mr -> mr,
-                                    (a, b) -> b,                   // last-wins
-                                    ConcurrentHashMap::new
+                                    (a, b) -> b                  // last-wins
                             )
                     );
             medicalRecordByPersonKey.putAll(mrByKey);
         }
+
 
         log.info("Repo init: persons={}, addresses={}, stations={}, records={}",
                 persons.size(), personsByAddress.size(), addressesByStation.size(), medicalRecordByPersonKey.size());
@@ -149,14 +138,14 @@ public class InMemoryDataRepository implements DataRepository {
     @Override
     public Set<String> findAddressesByStation(String stationNumber) {
         if (stationNumber == null) return Set.of();
-        var set = addressesByStation.get(norm(stationNumber));
+        Set<String> set = addressesByStation.get(norm(stationNumber));
         return (set == null || set.isEmpty()) ? Set.of() : Set.copyOf(set);
     }
 
     @Override
     public List<Person> findPersonsByAddress(String address) {
         if (address == null) return List.of();
-        var list = personsByAddress.get(norm(address));
+        List<Person> list = personsByAddress.get(norm(address));
         return (list == null || list.isEmpty()) ? List.of() : List.copyOf(list);
     }
 
@@ -174,14 +163,14 @@ public class InMemoryDataRepository implements DataRepository {
     @Override
     public List<Person> findPersonsByLastName(String lastName) {
         if (lastName == null) return List.of();
-        var list = personsByLastName.get(norm(lastName));
+        List<Person> list = personsByLastName.get(norm(lastName));
         return (list == null || list.isEmpty()) ? List.of() : List.copyOf(list);
     }
 
     @Override
     public Set<String> findEmailsByCity(String city) {
         if (city == null) return Set.of();
-        var set = emailsByCity.get(norm(city));
+        Set<String> set = emailsByCity.get(norm(city));
         return (set == null || set.isEmpty()) ? Set.of() : Set.copyOf(set);
     }
 
