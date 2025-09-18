@@ -31,7 +31,7 @@
     </properties>
 
     <dependencies>
-        <!-- Starter Web (je remplace Logback par Log4j2) -->
+        <!-- Starter Web ( remplace Logback par Log4j2) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
