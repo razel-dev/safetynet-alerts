@@ -1,6 +1,7 @@
 package com.safetynet.alerts.service;
 
-import com.safetynet.alerts.dto.*;
+import com.safetynet.alerts.dto.reporting.*;
+
 import java.util.*;
 
 public interface ReportingService {

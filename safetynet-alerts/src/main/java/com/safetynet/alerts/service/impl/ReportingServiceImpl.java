@@ -1,14 +1,14 @@
 package com.safetynet.alerts.service.impl;
 
-import com.safetynet.alerts.dto.ChildAlertDto;
-import com.safetynet.alerts.dto.FireAddressDto;
-import com.safetynet.alerts.dto.FirestationCoverageDto;
-import com.safetynet.alerts.dto.PersonInfoDto;
-import com.safetynet.alerts.dto.PersonSummaryDto;
-import com.safetynet.alerts.dto.ResidentMedicalDto;
-import com.safetynet.alerts.mapper.PersonInfoMapper;
-import com.safetynet.alerts.mapper.ResidentMapper;
-import com.safetynet.alerts.mapper.SummaryMapper;
+import com.safetynet.alerts.dto.reporting.ChildAlertDto;
+import com.safetynet.alerts.dto.reporting.FireAddressDto;
+import com.safetynet.alerts.dto.reporting.FirestationCoverageDto;
+import com.safetynet.alerts.dto.reporting.PersonInfoDto;
+import com.safetynet.alerts.dto.reporting.PersonSummaryDto;
+import com.safetynet.alerts.dto.reporting.ResidentMedicalDto;
+import com.safetynet.alerts.mapper.reporting.PersonInfoMapper;
+import com.safetynet.alerts.mapper.reporting.ResidentMapper;
+import com.safetynet.alerts.mapper.reporting.SummaryMapper;
 import com.safetynet.alerts.model.MedicalRecord;
 import com.safetynet.alerts.model.Person;
 import com.safetynet.alerts.repository.DataRepository;

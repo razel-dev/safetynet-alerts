@@ -1,6 +1,7 @@
-package com.safetynet.alerts.mapper;
+package com.safetynet.alerts.mapper.reporting;
 
-import com.safetynet.alerts.dto.PersonInfoDto;
+import com.safetynet.alerts.dto.reporting.PersonInfoDto;
+import com.safetynet.alerts.mapper.CentralMapperConfig;
 import com.safetynet.alerts.model.MedicalRecord;
 import com.safetynet.alerts.model.Person;
 

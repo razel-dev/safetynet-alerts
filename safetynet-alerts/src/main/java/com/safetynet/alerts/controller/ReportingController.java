@@ -1,6 +1,6 @@
 package com.safetynet.alerts.controller;
 
-import com.safetynet.alerts.dto.*;
+import com.safetynet.alerts.dto.reporting.*;
 import com.safetynet.alerts.service.ReportingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
