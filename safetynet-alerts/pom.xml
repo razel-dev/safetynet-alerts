@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Je pars sur le parent Spring Boot 3.5.x -->
+    <!-- Je m’appuie sur le parent Spring Boot 3.5.x pour la gestion des versions -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -19,19 +19,19 @@
     <description>SafetyNet Alerts</description>
 
     <properties>
-        <!-- J'utilise Java 21 -->
+        <!-- Je cible Java 21 -->
         <java.version>21</java.version>
 
-        <!-- Je fige Spring Framework sur 6.2.10 (patch sécu) -->
-        <spring-framework.version>6.2.10</spring-framework.version>
+        <!-- Encoding homogène sur tout le build -->
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <!-- MapStruct stable + Lombok -->
+        <!-- MapStruct + Lombok (versions récentes et stables) -->
         <mapstruct.version>1.6.3</mapstruct.version>
         <lombok.version>1.18.38</lombok.version>
     </properties>
 
     <dependencies>
-        <!-- Starter Web ( remplace Logback par Log4j2) -->
+        <!-- Web MVC + Jackson; je garde Logback exclu pour passer sur Log4j2 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -43,22 +43,7 @@
             </exclusions>
         </dependency>
 
-        <!-- MapStruct API (utilisé par mes mappers générés) -->
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-            <version>1.6.3</version>
-        </dependency>
-
-        <!-- Lombok : je garde en 'provided' car généré à la compilation/IDE -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- Validation Bean (pour @Valid et contraintes) -->
+        <!-- Validation (@Valid, javax/jakarta constraints) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
@@ -70,12 +55,28 @@
             <artifactId>spring-boot-starter-log4j2</artifactId>
         </dependency>
 
-        <!-- Tests (je vire Logback côté tests aussi) -->
+        <!-- MapStruct API (interfaces @Mapper utilisées à l’exécution) -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
+
+        <!-- Lombok (fourni par l’IDE/compilateur, pas au runtime) -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Tests (Junit Jupiter, AssertJ, Mockito…) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
             <exclusions>
+                <!-- J’évite de réintroduire Logback côté tests -->
                 <exclusion>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-starter-logging</artifactId>
@@ -86,21 +87,41 @@
 
     <build>
         <plugins>
-            <!-- Repackage pour exécuter l'appli (fat jar) -->
+            <!-- Packaging exécutable (fat jar) -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- Compiler : je force Java 21 + j'active les annotation processors
-                 - mapstruct-processor : génère l’impl. des @Mapper
-                 - lombok : génère getters/setters/builders avant que MapStruct scanne
-                 - lombok-mapstruct-binding : aligne MapStruct sur les conventions Lombok -->
+            <!-- Enforcer : je bétonne la version de Java et la convergence -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>enforce-java</id>
+                        <goals><goal>enforce</goal></goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>[21,)</version>
+                                </requireJavaVersion>
+                                <dependencyConvergence/>
+                            </rules>
+                            <fail>true</fail>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Compiler : Java 21 + annotation processors (MapStruct/Lombok) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
+                    <!-- release active le bon toolchain et évite source/target divergents -->
                     <release>${java.version}</release>
                     <annotationProcessorPaths>
                         <path>
@@ -113,23 +134,29 @@
                             <artifactId>lombok</artifactId>
                             <version>${lombok.version}</version>
                         </path>
+                        <!-- Binding pour que MapStruct comprenne les getters/setters Lombok -->
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok-mapstruct-binding</artifactId>
                             <version>0.2.0</version>
                         </path>
                     </annotationProcessorPaths>
+                    <!-- Optionnel : verbosité MapStruct en build
+                    <compilerArgs>
+                      <arg>-Amapstruct.verbose=true</arg>
+                    </compilerArgs>
+                    -->
                 </configuration>
             </plugin>
 
-            <!-- Surefire : tests JUnit5 -->
+            <!-- Surefire : plateforme JUnit 5 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
             </plugin>
 
-            <!-- JaCoCo : je veux un rapport à 'verify' (objectif ≥80%) -->
+            <!-- JaCoCo : rapport à verify (objectif ≥ 80 %) -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>

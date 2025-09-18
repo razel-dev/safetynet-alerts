@@ -6,6 +6,9 @@ import com.safetynet.alerts.dto.FirestationCoverageDto;
 import com.safetynet.alerts.dto.PersonInfoDto;
 import com.safetynet.alerts.dto.PersonSummaryDto;
 import com.safetynet.alerts.dto.ResidentMedicalDto;
+import com.safetynet.alerts.mapper.PersonInfoMapper;
+import com.safetynet.alerts.mapper.ResidentMapper;
+import com.safetynet.alerts.mapper.SummaryMapper;
 import com.safetynet.alerts.model.MedicalRecord;
 import com.safetynet.alerts.model.Person;
 import com.safetynet.alerts.repository.DataRepository;
@@ -25,60 +28,15 @@ public class ReportingServiceImpl implements ReportingService {
 
     private final DataRepository repo;
 
-    // ======================= Helpers anti-duplication =========================//
+    // >>> Mappers injectés
+    private final SummaryMapper summaryMapper;
+    private final ResidentMapper residentMapper;
+    private final PersonInfoMapper personInfoMapper;
 
+    // ------------------------ Helper non-mapping (accès repo) ------------------------
     /** Snapshot du dossier médical d'une personne ou null. */
     private MedicalRecord recordOf(Person p) {
         return repo.findMedicalRecord(p.getFirstName(), p.getLastName()).orElse(null);
-    }
-
-    /** Âge à partir d'un dossier (retourne -1 si mr == null). */
-    private int ageFromRecord(MedicalRecord mr) {
-        return (mr == null) ? -1 : AgeCalculator.computeAge(mr.getBirthdate());
-    }
-
-    /** Mappe Person -> PersonSummaryDto. */
-    private PersonSummaryDto toSummary(Person p) {
-        return new PersonSummaryDto(p.getFirstName(), p.getLastName(), p.getAddress(), p.getPhone());
-    }
-
-    /** Données santé dérivées du dossier médical. */
-    private record HealthData(int age, List<String> medications, List<String> allergies) {}
-
-    /** Calcule âge + listes meds/allergies pour une Person (gère null). */
-    private HealthData healthOf(Person p) {
-        MedicalRecord mr = recordOf(p);
-        int age = ageFromRecord(mr);
-        List<String> meds = (mr == null) ? Collections.emptyList() : mr.getMedications();
-        List<String> algs = (mr == null) ? Collections.emptyList() : mr.getAllergies();
-        return new HealthData(age, meds, algs);
-    }
-
-    /** Mappe Person -> ResidentMedicalDto en une passe (zéro duplication). */
-    private ResidentMedicalDto toResidentMedical(Person p) {
-        HealthData h = healthOf(p);
-        return new ResidentMedicalDto(
-                p.getFirstName(),
-                p.getLastName(),
-                p.getPhone(),
-                h.age(),
-                h.medications(),
-                h.allergies()
-        );
-    }
-
-    /** Mappe Person -> PersonInfoDto (adresse + email). */
-    private PersonInfoDto toPersonInfo(Person p) {
-        HealthData h = healthOf(p);
-        return new PersonInfoDto(
-                p.getFirstName(),
-                p.getLastName(),
-                p.getAddress(),
-                h.age(),
-                p.getEmail(),
-                h.medications(),
-                h.allergies()
-        );
     }
 
     // ============================ Endpoints GET ===============================
@@ -96,8 +54,9 @@ public class ReportingServiceImpl implements ReportingService {
         List<PersonSummaryDto> summaries = new ArrayList<>(persons.size());
 
         for (Person p : persons) {
-            summaries.add(toSummary(p));
-            int age = ageFromRecord(recordOf(p));
+            summaries.add(summaryMapper.toSummary(p));
+            int age = AgeCalculator.computeAge(
+                    Optional.ofNullable(recordOf(p)).map(MedicalRecord::getBirthdate).orElse(null));
             if (age >= 0 && age <= 18) children++; else adults++;
         }
 
@@ -115,12 +74,13 @@ public class ReportingServiceImpl implements ReportingService {
         if (residents.isEmpty()) return Collections.emptyList();
 
         List<PersonSummaryDto> household = residents.stream()
-                .map(this::toSummary)
+                .map(summaryMapper::toSummary)
                 .toList();
 
         List<ChildAlertDto> children = new ArrayList<>();
         for (Person p : residents) {
-            int age = ageFromRecord(recordOf(p));
+            int age = AgeCalculator.computeAge(
+                    Optional.ofNullable(recordOf(p)).map(MedicalRecord::getBirthdate).orElse(null));
             if (age >= 0 && age <= 18) {
                 List<PersonSummaryDto> others = household.stream()
                         .filter(ps -> !(ps.firstName().equals(p.getFirstName())
@@ -137,8 +97,7 @@ public class ReportingServiceImpl implements ReportingService {
     public Set<String> getPhonesByFirestation(String stationNumber) {
         log.debug("[service] /phoneAlert IN station={}", stationNumber);
 
-        Set<String> addresses = repo.findAddressesByStation(stationNumber);
-        Set<String> phones = addresses.stream()
+        Set<String> phones = repo.findAddressesByStation(stationNumber).stream()
                 .flatMap(addr -> repo.findPersonsByAddress(addr).stream())
                 .map(Person::getPhone)
                 .filter(Objects::nonNull)
@@ -153,10 +112,8 @@ public class ReportingServiceImpl implements ReportingService {
         log.debug("[service] /fire IN address={}", address);
 
         String station = repo.findStationByAddress(address).orElse("");
-        List<Person> residents = repo.findPersonsByAddress(address);
-
-        List<ResidentMedicalDto> list = residents.stream()
-                .map(this::toResidentMedical)
+        List<ResidentMedicalDto> list = repo.findPersonsByAddress(address).stream()
+                .map(p -> residentMapper.toResident(p, recordOf(p)))
                 .collect(Collectors.toList());
 
         FireAddressDto out = new FireAddressDto(station, list);
@@ -171,10 +128,10 @@ public class ReportingServiceImpl implements ReportingService {
         Map<String, List<ResidentMedicalDto>> byAddress = new LinkedHashMap<>();
         for (String st : stations) {
             for (String addr : repo.findAddressesByStation(st)) {
-                List<ResidentMedicalDto> bucket = byAddress.computeIfAbsent(addr, a -> new ArrayList<>());
-                for (Person p : repo.findPersonsByAddress(addr)) {
-                    bucket.add(toResidentMedical(p));
-                }
+                var residents = repo.findPersonsByAddress(addr).stream()
+                        .map(p -> residentMapper.toResident(p, recordOf(p)))
+                        .toList();
+                byAddress.merge(addr, new ArrayList<>(residents), (a, b) -> { a.addAll(b); return a; });
             }
         }
         log.info("[service] /flood/stations -> addresses={}", byAddress.size());
@@ -185,9 +142,8 @@ public class ReportingServiceImpl implements ReportingService {
     public List<PersonInfoDto> getPersonInfoByLastName(String lastName) {
         log.debug("[service] /personInfo IN lastName={}", lastName);
 
-        List<Person> people = repo.findPersonsByLastName(lastName);
-        List<PersonInfoDto> out = people.stream()
-                .map(this::toPersonInfo)
+        List<PersonInfoDto> out = repo.findPersonsByLastName(lastName).stream()
+                .map(p -> personInfoMapper.toInfo(p, recordOf(p)))
                 .collect(Collectors.toList());
 
         log.info("[service] /personInfo lastName={} -> results={}", lastName, out.size());
