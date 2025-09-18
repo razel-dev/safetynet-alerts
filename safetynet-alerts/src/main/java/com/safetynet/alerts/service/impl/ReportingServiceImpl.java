@@ -25,7 +25,7 @@ public class ReportingServiceImpl implements ReportingService {
 
     private final DataRepository repo;
 
-    // ======================= Helpers anti-duplication =========================
+    // ======================= Helpers anti-duplication =========================//
 
     /** Snapshot du dossier médical d'une personne ou null. */
     private MedicalRecord recordOf(Person p) {
