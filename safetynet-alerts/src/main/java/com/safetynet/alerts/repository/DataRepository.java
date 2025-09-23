@@ -1,13 +1,16 @@
 package com.safetynet.alerts.repository;
 
 import com.safetynet.alerts.model.*;
+
 import java.util.*;
 
 public interface DataRepository {
 
+    // -------- Init depuis data.json --------
     /** Initialise le dépôt depuis data.json (via DataSet). */
     void init(DataSet dataSet);
 
+    // -------- Lectures (reporting) --------
     /** Caserne → adresses desservies. */
     Set<String> findAddressesByStation(String stationNumber);
 
@@ -28,4 +31,20 @@ public interface DataRepository {
 
     /** Toutes personnes (snapshot défensif). */
     List<Person> findAllPersons();
+
+    /** (firstName,lastName) → personne. */
+    Optional<Person> findPerson(String firstName, String lastName);
+
+    // -------- Écritures (CRUD) --------
+    // Person
+    void savePerson(Person person);                    // create / update complet
+    void deletePerson(String firstName, String lastName);
+
+    // MedicalRecord
+    void saveMedicalRecord(MedicalRecord mr);         // create / update complet
+    void deleteMedicalRecord(String firstName, String lastName);
+
+    // Firestation mapping
+    void saveMapping(String address, String station); // create / update mapping
+    void deleteMapping(String address);               // delete mapping
 }
