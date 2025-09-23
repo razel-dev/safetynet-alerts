@@ -124,18 +124,27 @@ public class ReportingServiceImpl implements ReportingService {
     @Override
     public Map<String, List<ResidentMedicalDto>> getFloodByStations(Set<String> stations) {
         log.debug("[service] /flood/stations IN stations={}", stations);
+        if (stations == null || stations.isEmpty()) return Map.of();
 
-        Map<String, List<ResidentMedicalDto>> byAddress = new LinkedHashMap<>();
-        for (String st : stations) {
-            for (String addr : repo.findAddressesByStation(st)) {
-                var residents = repo.findPersonsByAddress(addr).stream()
-                        .map(p -> residentMapper.toResident(p, recordOf(p)))
-                        .toList();
-                byAddress.merge(addr, new ArrayList<>(residents), (a, b) -> { a.addAll(b); return a; });
-            }
+        // 1) Adresses uniques (ordre stable) sur l'ensemble des stations demandées
+        Set<String> uniqueAddresses = stations.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .flatMap(st -> repo.findAddressesByStation(st).stream())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        // 2) Construction du résultat une seule fois par adresse
+        Map<String, List<ResidentMedicalDto>> result = new LinkedHashMap<>();
+        for (String addr : uniqueAddresses) {
+            List<ResidentMedicalDto> residents = repo.findPersonsByAddress(addr).stream()
+                    .map(p -> residentMapper.toResident(p, recordOf(p)))
+                    .toList();
+            result.put(addr, residents);
         }
-        log.info("[service] /flood/stations -> addresses={}", byAddress.size());
-        return byAddress;
+
+        log.info("[service] /flood/stations -> addresses={}", result.size());
+        return result;
     }
 
     @Override
