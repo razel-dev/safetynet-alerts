@@ -1,4 +1,4 @@
-package com.safetynet.alerts.controller;
+package com.safetynet.alerts.controller.reporting;
 
 import com.safetynet.alerts.dto.reporting.*;
 import com.safetynet.alerts.service.ReportingService;
