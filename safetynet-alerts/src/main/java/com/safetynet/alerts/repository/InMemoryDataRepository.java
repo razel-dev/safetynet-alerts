@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -16,24 +17,77 @@ import java.util.stream.Collectors;
 public class InMemoryDataRepository implements DataRepository {
 
     // ---------- Index ----------
-    private final Map<String, List<Person>>  personsByAddress         = new ConcurrentHashMap<>();
-    private final Map<String, Set<String>>   addressesByStation       = new ConcurrentHashMap<>();
-    private final Map<String, String>        stationByAddress         = new ConcurrentHashMap<>();
-    private final Map<String, MedicalRecord> medicalRecordByPersonKey = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, List<Person>>  personsByAddress         = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Set<String>>   addressesByStation       = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, String>        stationByAddress         = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, MedicalRecord> medicalRecordByPersonKey = new ConcurrentHashMap<>();
 
     // Pour /personInfo & /communityEmail
-    private final Map<String, List<Person>>  personsByLastName        = new ConcurrentHashMap<>();
-    private final Map<String, Set<String>>   emailsByCity             = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, List<Person>>  personsByLastName        = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Set<String>>   emailsByCity             = new ConcurrentHashMap<>();
 
-    // Snapshot global de toutes les personnes
+    // Snapshot global & accès direct par identité
     private final List<Person> persons = new ArrayList<>();
+    private final ConcurrentMap<String, Person> personsByKey = new ConcurrentHashMap<>();
 
     // -------------------- Helpers --------------------
-    private static String norm(String s) {
-        return (s == null) ? "" : s.trim().toLowerCase(Locale.ROOT);
+    private static String norm(String s) { return (s == null) ? "" : s.trim().toLowerCase(Locale.ROOT); }
+    private static String key(String first, String last) { return norm(first) + "|" + norm(last); }
+    private static boolean samePerson(Person a, Person b) {
+        return norm(a.getFirstName()).equals(norm(b.getFirstName()))
+                && norm(a.getLastName()).equals(norm(b.getLastName()));
     }
-    private static String key(String first, String last) {
-        return norm(first) + "|" + norm(last);
+
+    private void indexPerson(Person p) {
+        // index principal
+        personsByKey.put(key(p.getFirstName(), p.getLastName()), p);
+
+        // adresse -> personnes
+        personsByAddress.compute(norm(p.getAddress()), (addr, list) -> {
+            if (list == null) list = new ArrayList<>();
+            list.removeIf(old -> samePerson(old, p));
+            list.add(p);
+            return list;
+        });
+
+        // nom -> personnes
+        personsByLastName.compute(norm(p.getLastName()), (ln, list) -> {
+            if (list == null) list = new ArrayList<>();
+            list.removeIf(old -> samePerson(old, p));
+            list.add(p);
+            return list;
+        });
+
+        // city -> emails
+        if (p.getEmail() != null) {
+            emailsByCity.compute(norm(p.getCity()), (c, set) -> {
+                if (set == null) set = ConcurrentHashMap.newKeySet();
+                set.add(p.getEmail());
+                return set;
+            });
+        }
+
+        // snapshot global
+        persons.removeIf(old -> samePerson(old, p));
+        persons.add(p);
+    }
+
+    private void deindexPerson(Person p) {
+        personsByKey.remove(key(p.getFirstName(), p.getLastName()));
+
+        personsByAddress.computeIfPresent(norm(p.getAddress()), (a, list) -> { list.removeIf(old -> samePerson(old, p)); return list; });
+        personsByLastName.computeIfPresent(norm(p.getLastName()), (ln, list) -> { list.removeIf(old -> samePerson(old, p)); return list; });
+
+        // recalcul léger des emails pour la ville concernée
+        emailsByCity.compute(norm(p.getCity()), (c, set) -> {
+            Set<String> recompute = persons.stream()
+                    .filter(x -> norm(x.getCity()).equals(norm(p.getCity())))
+                    .map(Person::getEmail).filter(Objects::nonNull)
+                    .collect(Collectors.toCollection(ConcurrentHashMap::newKeySet));
+            return recompute.isEmpty() ? null : recompute;
+        });
+
+        persons.removeIf(old -> samePerson(old, p));
     }
 
     // -------------------- Init (idempotent) --------------------
@@ -48,93 +102,77 @@ public class InMemoryDataRepository implements DataRepository {
         medicalRecordByPersonKey.clear();
         personsByLastName.clear();
         emailsByCity.clear();
+        personsByKey.clear();
         persons.clear();
 
         // -------- Persons --------
-        final List<Person> ps = dataSet.getPersons();
-        if (ps != null && !ps.isEmpty()) {
+        final List<Person> ps = Optional.ofNullable(dataSet.getPersons()).orElseGet(List::of);
+        if (!ps.isEmpty()) {
             persons.addAll(ps);
+            ps.forEach(p -> personsByKey.put(key(p.getFirstName(), p.getLastName()), p));
 
             // adresse -> personnes
-            Map<String, List<Person>> byAddress =
-                    ps.stream().collect(Collectors.groupingBy(
+            personsByAddress.putAll(
+                    (Map<? extends String, ? extends List<Person>>) ps.stream().collect(Collectors.groupingBy(
                             p -> norm(p.getAddress()),
                             ConcurrentHashMap::new,
-                            Collectors.toList()
-                    ));
-            personsByAddress.putAll(byAddress);
-
+                            Collectors.toList()))
+            );
 
             // lastName -> personnes
-            Map<String, List<Person>> byLastName =
-                    ps.stream().collect(Collectors.groupingBy(
+            personsByLastName.putAll(
+                    (Map<? extends String, ? extends List<Person>>) ps.stream().collect(Collectors.groupingBy(
                             p -> norm(p.getLastName()),
                             ConcurrentHashMap::new,
-                            Collectors.toList()
-                    ));
-            personsByLastName.putAll(byLastName);
+                            Collectors.toList()))
+            );
 
             // city -> emails
-            Map<String, Set<String>> emailsByCityTmp =
-                    ps.stream()
-                            .filter(p -> p.getEmail() != null )
+            emailsByCity.putAll(
+                    (Map<? extends String, ? extends Set<String>>) ps.stream()
+                            .filter(p -> p.getEmail() != null)
                             .collect(Collectors.groupingBy(
                                     p -> norm(p.getCity()),
                                     ConcurrentHashMap::new,
-                                    Collectors.mapping(Person::getEmail, Collectors.toCollection(ConcurrentHashMap::newKeySet))
-                            ));
-
-            emailsByCity.putAll(emailsByCityTmp);
+                                    Collectors.mapping(Person::getEmail, Collectors.toCollection(ConcurrentHashMap::newKeySet))))
+            );
         }
-        // -------- Firestations --------
-        final List<FirestationMapping> fs = dataSet.getFirestations();
-        if (!fs.isEmpty()) {
-            // station(norm) -> adresses
-            Map<String, Set<String>> addressesByStationTmp =
-                    fs.stream().collect(
-                            Collectors.groupingBy(
-                                    m -> norm(m.getStation()),
-                                    Collectors.mapping(
-                                            FirestationMapping::getAddress,
-                                            Collectors.toSet()
-                                    )
-                            )
-                    );
-            addressesByStation.putAll(addressesByStationTmp);
 
-            // adresse(norm) -> station(norm) (règle first-wins)
-            Map<String, String> stationByAddressTmp =
-                    fs.stream().collect(
-                            Collectors.toMap(
-                                    m -> norm(m.getAddress()),
-                                    m -> norm(m.getStation()),
-                                    (first, second) -> first      // first-wins si doublon dans le JSON
-                            )
-                    );
-            stationByAddress.putAll(stationByAddressTmp);
+        // -------- Firestations --------
+        final List<FirestationMapping> fs = Optional.ofNullable(dataSet.getFirestations()).orElseGet(List::of);
+        if (!fs.isEmpty()) {
+            // station -> adresses
+            addressesByStation.putAll(
+                    (Map<? extends String, ? extends Set<String>>) fs.stream().collect(Collectors.groupingBy(
+                            m -> norm(m.getStation()),
+                            ConcurrentHashMap::new,
+                            Collectors.mapping(FirestationMapping::getAddress, Collectors.toCollection(ConcurrentHashMap::newKeySet))))
+            );
+            // adresse -> station (first-wins)
+            stationByAddress.putAll(
+                    fs.stream().collect(Collectors.toMap(
+                            m -> norm(m.getAddress()),
+                            m -> norm(m.getStation()),
+                            (first, second) -> first))
+            );
         }
 
         // -------- Medical records --------
-        final List<MedicalRecord> mrs = dataSet.getMedicalrecords();
+        final List<MedicalRecord> mrs = Optional.ofNullable(dataSet.getMedicalrecords()).orElseGet(List::of);
         if (!mrs.isEmpty()) {
-            // (first|last) -> record (last-wins)
-            Map<String, MedicalRecord> mrByKey =
-                    mrs.stream().collect(
-                            Collectors.toMap(
-                                    mr -> key(mr.getFirstName(), mr.getLastName()),
-                                    mr -> mr,
-                                    (a, b) -> b                  // last-wins
-                            )
-                    );
-            medicalRecordByPersonKey.putAll(mrByKey);
+            medicalRecordByPersonKey.putAll(
+                    mrs.stream().collect(Collectors.toMap(
+                            mr -> key(mr.getFirstName(), mr.getLastName()),
+                            mr -> mr,
+                            (a, b) -> b)) // last-wins
+            );
         }
-
 
         log.info("Repo init: persons={}, addresses={}, stations={}, records={}",
                 persons.size(), personsByAddress.size(), addressesByStation.size(), medicalRecordByPersonKey.size());
     }
 
-    // -------------------- Requêtes (contrat DataRepository) --------------------
+    // -------------------- Requêtes (lecture) --------------------
     @Override
     public Set<String> findAddressesByStation(String stationNumber) {
         if (stationNumber == null) return Set.of();
@@ -177,5 +215,63 @@ public class InMemoryDataRepository implements DataRepository {
     @Override
     public List<Person> findAllPersons() {
         return List.copyOf(persons);
+    }
+
+    @Override
+    public Optional<Person> findPerson(String firstName, String lastName) {
+        return Optional.ofNullable(personsByKey.get(key(firstName, lastName)));
+    }
+
+    // -------------------- Écritures (CRUD) --------------------
+    // Person
+    @Override
+    public void savePerson(Person person) {
+        // upsert : désindexer l’éventuelle ancienne version
+        findPerson(person.getFirstName(), person.getLastName()).ifPresent(this::deindexPerson);
+        indexPerson(person);
+    }
+
+    @Override
+    public void deletePerson(String firstName, String lastName) {
+        findPerson(firstName, lastName).ifPresent(this::deindexPerson);
+    }
+
+    // MedicalRecord
+    @Override
+    public void saveMedicalRecord(MedicalRecord mr) {
+        medicalRecordByPersonKey.put(key(mr.getFirstName(), mr.getLastName()), mr);
+    }
+
+    @Override
+    public void deleteMedicalRecord(String firstName, String lastName) {
+        medicalRecordByPersonKey.remove(key(firstName, lastName));
+    }
+
+    // Firestation mapping
+    @Override
+    public void saveMapping(String address, String station) {
+        final String a = norm(address);
+        final String s = norm(station);
+
+        // retirer ancienne station si elle change
+        String previous = stationByAddress.put(a, s);
+        if (previous != null && !previous.equals(s)) {
+            addressesByStation.computeIfPresent(previous, (st, set) -> { set.remove(address); return set; });
+        }
+        // ajouter dans l’index inverse
+        addressesByStation.compute(s, (st, set) -> {
+            if (set == null) set = ConcurrentHashMap.newKeySet();
+            set.add(address); // on conserve la casse d’origine en sortie
+            return set;
+        });
+    }
+
+    @Override
+    public void deleteMapping(String address) {
+        final String a = norm(address);
+        String st = stationByAddress.remove(a);
+        if (st != null) {
+            addressesByStation.computeIfPresent(st, (key, set) -> { set.remove(address); return set; });
+        }
     }
 }
