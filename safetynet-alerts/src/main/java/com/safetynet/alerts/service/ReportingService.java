@@ -1,8 +1,14 @@
 package com.safetynet.alerts.service;
 
-import com.safetynet.alerts.dto.reporting.*;
+import com.safetynet.alerts.dto.reporting.ChildAlertDto;
+import com.safetynet.alerts.dto.reporting.FireAddressDto;
+import com.safetynet.alerts.dto.reporting.FirestationCoverageDto;
+import com.safetynet.alerts.dto.reporting.PersonInfoDto;
+import com.safetynet.alerts.dto.reporting.ResidentMedicalDto;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface ReportingService {
     FirestationCoverageDto getPersonsByStation(String stationNumber);                 // /firestation

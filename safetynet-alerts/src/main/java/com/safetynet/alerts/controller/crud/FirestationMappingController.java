@@ -23,11 +23,16 @@ public class FirestationMappingController {
     @PostMapping(consumes = "application/json")
     public ResponseEntity<FirestationResponseDto> create(@Valid @RequestBody FirestationCreateDto dto) {
         var out = service.create(dto);
+        java.net.URI location = org.springframework.web.util.UriComponentsBuilder
+                .fromPath("/firestation/{address}")
+                .buildAndExpand(out.address())
+                .encode()
+                .toUri();
         return ResponseEntity
-                .created(URI.create("/firestation/" + out.address()))
+                .created(location)
                 .body(out);
     }
-
+    
     @PutMapping(path = "/{address}", consumes = "application/json")
     public ResponseEntity<FirestationResponseDto> update(
             @PathVariable String address,

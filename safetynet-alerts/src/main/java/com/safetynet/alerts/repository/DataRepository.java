@@ -1,6 +1,9 @@
 package com.safetynet.alerts.repository;
 
-import com.safetynet.alerts.model.*;
+import com.safetynet.alerts.model.DataSet;
+import com.safetynet.alerts.model.MedicalRecord;
+import com.safetynet.alerts.model.Person;
+
 
 import java.util.*;
 

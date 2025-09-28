@@ -5,13 +5,14 @@ import com.safetynet.alerts.mapper.CentralMapperConfig;
 import com.safetynet.alerts.model.MedicalRecord;
 import com.safetynet.alerts.model.Person;
 
+import com.safetynet.alerts.time.AgeCalculator;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.springframework.lang.Nullable;
 
 @Mapper(
         config = CentralMapperConfig.class,
-        imports = com.safetynet.alerts.time.AgeCalculator.class
+        imports = AgeCalculator.class
 )
 public interface ResidentMapper {
     @Mapping(target="firstName", source="p.firstName")

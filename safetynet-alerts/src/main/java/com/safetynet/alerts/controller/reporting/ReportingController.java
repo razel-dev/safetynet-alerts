@@ -1,6 +1,8 @@
 package com.safetynet.alerts.controller.reporting;
 
 import com.safetynet.alerts.dto.reporting.*;
+
+import com.safetynet.alerts.dto.reporting.*;
 import com.safetynet.alerts.service.ReportingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,8 +16,8 @@ import java.util.*;
 public class ReportingController {
 
     private final ReportingService reporting;
-
     /** /firestation?stationNumber= */
+
     @GetMapping("/firestation")
     public FirestationCoverageDto firestation(@RequestParam String stationNumber) {
         log.debug("HTTP IN /firestation stationNumber={}", stationNumber);
