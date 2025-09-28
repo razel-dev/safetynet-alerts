@@ -1,3 +1,4 @@
+
 package com.safetynet.alerts.controller.crud;
 
 import com.safetynet.alerts.dto.crud.medicalrecord.MedicalRecordCreateDto;
@@ -33,7 +34,7 @@ public class MedicalRecordController {
                 .created(location)
                 .body(out);
     }
-    // ... existing code ...
+
     @PutMapping(path = "/{firstName}/{lastName}", consumes = "application/json")
     public ResponseEntity<MedicalRecordResponseDto> update(
             @PathVariable String firstName,
