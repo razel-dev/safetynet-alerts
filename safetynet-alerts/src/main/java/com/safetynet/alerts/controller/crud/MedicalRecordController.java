@@ -23,15 +23,10 @@ public class MedicalRecordController {
 
     @PostMapping(consumes = "application/json")
     public ResponseEntity<MedicalRecordResponseDto> create(@Valid @RequestBody MedicalRecordCreateDto dto) {
-        var out = medicalRecordService.create(dto);
-        // Encodage sûr des segments firstName/lastName
-        URI location = org.springframework.web.util.UriComponentsBuilder
-                .fromPath("/medicalRecord/{first}/{last}")
-                .buildAndExpand(out.firstName(), out.lastName())
-                .encode()
-                .toUri();
+        MedicalRecordResponseDto out = medicalRecordService.create(dto);
+
         return ResponseEntity
-                .created(location)
+                .created(URI.create("/medicalRecord/" + out.firstName() + "/" + out.lastName()))
                 .body(out);
     }
 

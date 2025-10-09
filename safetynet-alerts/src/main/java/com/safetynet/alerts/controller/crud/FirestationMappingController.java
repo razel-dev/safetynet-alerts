@@ -22,14 +22,9 @@ public class FirestationMappingController {
 
     @PostMapping(consumes = "application/json")
     public ResponseEntity<FirestationResponseDto> create(@Valid @RequestBody FirestationCreateDto dto) {
-        var out = service.create(dto);
-        java.net.URI location = org.springframework.web.util.UriComponentsBuilder
-                .fromPath("/firestation/{address}")
-                .buildAndExpand(out.address())
-                .encode()
-                .toUri();
+        FirestationResponseDto out = service.create(dto);
         return ResponseEntity
-                .created(location)
+                .created(URI.create("/firestation/" + out.address()))
                 .body(out);
     }
     

@@ -20,6 +20,7 @@ public class PersonController {
 
     private final PersonService personService;
 
+
     @PostMapping(consumes = "application/json")
     public ResponseEntity<PersonResponseDto> create(@Valid @RequestBody PersonCreateDto dto) {
         PersonResponseDto out = personService.create(dto);
@@ -32,6 +33,7 @@ public class PersonController {
     public ResponseEntity<PersonResponseDto> update(
             @PathVariable String firstName,
             @PathVariable String lastName,
+
             @Valid @RequestBody PersonUpdateDto dto) {
         return ResponseEntity.ok(personService.update(firstName, lastName, dto));
     }

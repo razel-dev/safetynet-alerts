@@ -10,6 +10,6 @@ public record PersonCreateDto(
         @NotBlank String address,
         @NotBlank String city,
         @NotBlank String zip,
-        @NotBlank String phone,
-        @Email     String email
+                  String phone,
+                  String email
 ) {}
