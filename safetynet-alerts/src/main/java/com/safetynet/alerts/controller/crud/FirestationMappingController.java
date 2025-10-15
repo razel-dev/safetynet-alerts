@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 
@@ -24,7 +25,13 @@ public class FirestationMappingController {
     public ResponseEntity<FirestationResponseDto> create(@Valid @RequestBody FirestationCreateDto dto) {
         FirestationResponseDto out = service.create(dto);
         return ResponseEntity
-                .created(URI.create("/firestation/" + out.address()))
+                .created(
+                        UriComponentsBuilder
+                                .fromPath("/firestation/{address}")
+                                .buildAndExpand(out.address())
+                                .encode()
+                                .toUri()
+                )
                 .body(out);
     }
     

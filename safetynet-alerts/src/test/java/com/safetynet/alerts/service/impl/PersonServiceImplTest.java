@@ -3,8 +3,6 @@ package com.safetynet.alerts.service.impl;
 import com.safetynet.alerts.dto.crud.person.PersonCreateDto;
 import com.safetynet.alerts.dto.crud.person.PersonResponseDto;
 import com.safetynet.alerts.dto.crud.person.PersonUpdateDto;
-import com.safetynet.alerts.exception.ConflictException;
-import com.safetynet.alerts.exception.NotFoundException;
 import com.safetynet.alerts.mapper.crud.person.PersonMapper;
 import com.safetynet.alerts.model.Person;
 import com.safetynet.alerts.repository.DataRepository;

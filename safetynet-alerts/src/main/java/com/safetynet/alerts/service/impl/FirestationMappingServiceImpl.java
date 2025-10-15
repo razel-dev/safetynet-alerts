@@ -3,8 +3,8 @@ package com.safetynet.alerts.service.impl;
 import com.safetynet.alerts.dto.crud.firestation.FirestationCreateDto;
 import com.safetynet.alerts.dto.crud.firestation.FirestationResponseDto;
 import com.safetynet.alerts.dto.crud.firestation.FirestationUpdateDto;
-import com.safetynet.alerts.exception.ConflictException;
-import com.safetynet.alerts.exception.NotFoundException;
+import com.safetynet.alerts.exception.ConflictExeption;
+import com.safetynet.alerts.exception.NotFoundExeption;
 import com.safetynet.alerts.mapper.crud.firestation.FirestationCrudMapper;
 import com.safetynet.alerts.repository.DataRepository;
 import com.safetynet.alerts.service.FirestationMappingService;
@@ -55,13 +55,13 @@ public class FirestationMappingServiceImpl implements FirestationMappingService 
 
     private void ensureAddressNotMapped(String address) {
         if (repository.findStationByAddress(address).isPresent()) {
-            throw new ConflictException("Mapping already exists for address: " + address);
+            throw new ConflictExeption("Mapping already exists for address: " + address);
         }
     }
 
     private void ensureAddressExists(String address) {
         if (repository.findStationByAddress(address).isEmpty()) {
-            throw new NotFoundException("Mapping not found for address: " + address);
+            throw new NotFoundExeption("Mapping not found for address: " + address);
         }
     }
 

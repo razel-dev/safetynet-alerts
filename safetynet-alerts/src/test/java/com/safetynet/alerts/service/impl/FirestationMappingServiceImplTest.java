@@ -3,8 +3,6 @@ package com.safetynet.alerts.service.impl;
 import com.safetynet.alerts.dto.crud.firestation.FirestationCreateDto;
 import com.safetynet.alerts.dto.crud.firestation.FirestationResponseDto;
 import com.safetynet.alerts.dto.crud.firestation.FirestationUpdateDto;
-import com.safetynet.alerts.exception.ConflictException;
-import com.safetynet.alerts.exception.NotFoundException;
 import com.safetynet.alerts.mapper.crud.firestation.FirestationCrudMapper;
 import com.safetynet.alerts.repository.DataRepository;
 import org.junit.jupiter.api.BeforeEach;

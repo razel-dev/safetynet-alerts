@@ -3,8 +3,6 @@ package com.safetynet.alerts.service.impl;
 import com.safetynet.alerts.dto.crud.medicalrecord.MedicalRecordCreateDto;
 import com.safetynet.alerts.dto.crud.medicalrecord.MedicalRecordResponseDto;
 import com.safetynet.alerts.dto.crud.medicalrecord.MedicalRecordUpdateDto;
-import com.safetynet.alerts.exception.ConflictException;
-import com.safetynet.alerts.exception.NotFoundException;
 import com.safetynet.alerts.mapper.crud.medicalrecord.MedicalRecordMapper;
 import com.safetynet.alerts.model.MedicalRecord;
 import com.safetynet.alerts.repository.DataRepository;

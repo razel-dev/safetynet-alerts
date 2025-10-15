@@ -3,8 +3,8 @@ package com.safetynet.alerts.service.impl;
 import com.safetynet.alerts.dto.crud.person.PersonCreateDto;
 import com.safetynet.alerts.dto.crud.person.PersonResponseDto;
 import com.safetynet.alerts.dto.crud.person.PersonUpdateDto;
-import com.safetynet.alerts.exception.ConflictException;
-import com.safetynet.alerts.exception.NotFoundException;
+import com.safetynet.alerts.exception.ConflictExeption;
+import com.safetynet.alerts.exception.NotFoundExeption;
 import com.safetynet.alerts.mapper.crud.person.PersonMapper;
 import com.safetynet.alerts.model.Person;
 import com.safetynet.alerts.repository.DataRepository;
@@ -26,7 +26,7 @@ public class PersonServiceImpl implements PersonService {
     public PersonResponseDto create(PersonCreateDto dto) {
         log.debug("[service] Person.create IN dto={}", dto);
         repo.findPerson(dto.firstName(), dto.lastName()).ifPresent(p -> {
-            throw new ConflictException("Person already exists: " + dto.firstName() + " " + dto.lastName());
+            throw new ConflictExeption("Person already exists: " + dto.firstName() + " " + dto.lastName());
         });
 
         Person entity = personMapper.toEntity(dto);
@@ -41,7 +41,7 @@ public class PersonServiceImpl implements PersonService {
     public PersonResponseDto update(String firstName, String lastName, PersonUpdateDto dto) {
         log.debug("[service] Person.update IN id={}-{} dto={}", firstName, lastName, dto);
         Person entity = repo.findPerson(firstName, lastName)
-                .orElseThrow(() -> new NotFoundException("Person not found: " + firstName + " " + lastName));
+                .orElseThrow(() -> new NotFoundExeption("Person not found: " + firstName + " " + lastName));
 
         personMapper.update(entity, dto);   // identité ignorée par le mapper
         repo.savePerson(entity);
@@ -55,7 +55,7 @@ public class PersonServiceImpl implements PersonService {
     public void delete(String firstName, String lastName) {
         log.debug("[service] Person.delete IN id={}-{}", firstName, lastName);
         if (repo.findPerson(firstName, lastName).isEmpty()) {
-            throw new NotFoundException("Person not found: " + firstName + " " + lastName);
+            throw new NotFoundExeption("Person not found: " + firstName + " " + lastName);
         }
         repo.deletePerson(firstName, lastName);
         log.info("[service] Person.delete OUT id={}-{}", firstName, lastName);

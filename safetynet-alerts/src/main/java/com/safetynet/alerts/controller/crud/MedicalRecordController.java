@@ -11,10 +11,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
+import org.springframework.web.util.UriComponentsBuilder;
+
+
 
 @RestController
-@RequestMapping(path = "/medicalRecord", produces = "application/json")
+@RequestMapping(path = "/medicalRecord")
 @RequiredArgsConstructor
 @Validated
 public class MedicalRecordController {
@@ -26,7 +28,13 @@ public class MedicalRecordController {
         MedicalRecordResponseDto out = medicalRecordService.create(dto);
 
         return ResponseEntity
-                .created(URI.create("/medicalRecord/" + out.firstName() + "/" + out.lastName()))
+                .created(
+                        UriComponentsBuilder
+                                .fromPath("/medicalRecord/{firstName}/{lastName}")
+                                .buildAndExpand(out.firstName(), out.lastName())
+                                .encode()
+                                .toUri()
+                )
                 .body(out);
     }
 

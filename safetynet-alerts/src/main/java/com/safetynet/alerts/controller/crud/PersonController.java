@@ -10,10 +10,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
+import org.springframework.web.util.UriComponentsBuilder;
+
+
 
 @RestController
-@RequestMapping(path = "/person", produces = "application/json")
+@RequestMapping(path = "/person")
 @RequiredArgsConstructor
 @Validated
 public class PersonController {
@@ -25,11 +27,17 @@ public class PersonController {
     public ResponseEntity<PersonResponseDto> create(@Valid @RequestBody PersonCreateDto dto) {
         PersonResponseDto out = personService.create(dto);
         return ResponseEntity
-                .created(URI.create("/person/" + out.firstName() + "/" + out.lastName()))
+                .created(
+                        UriComponentsBuilder
+                                .fromPath("/person/{firstName}/{lastName}")
+                                .buildAndExpand(out.firstName(), out.lastName())
+                                .encode()
+                                .toUri()
+                )
                 .body(out);
     }
 
-    @PutMapping(path = "/{firstName}/{lastName}", consumes = "application/json")
+    @PutMapping(path = "/{firstName}/{lastName}")
     public ResponseEntity<PersonResponseDto> update(
             @PathVariable String firstName,
             @PathVariable String lastName,
@@ -37,6 +45,7 @@ public class PersonController {
             @Valid @RequestBody PersonUpdateDto dto) {
         return ResponseEntity.ok(personService.update(firstName, lastName, dto));
     }
+
 
     @DeleteMapping("/{firstName}/{lastName}")
     public ResponseEntity<Void> delete(
