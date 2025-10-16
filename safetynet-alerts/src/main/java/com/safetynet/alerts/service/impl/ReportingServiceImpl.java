@@ -55,9 +55,9 @@ public class ReportingServiceImpl implements ReportingService {
 
         for (Person p : persons) {
             summaries.add(summaryMapper.toSummary(p));
-            int age = AgeCalculator.computeAge(
-                    Optional.ofNullable(recordOf(p)).map(MedicalRecord::getBirthdate).orElse(null));
-            if (age >= 0 && age <= 18) children++; else adults++;
+            String birthdate = Optional.ofNullable(recordOf(p)).map(MedicalRecord::getBirthdate).orElse(null);
+            int age = AgeCalculator.computeAge(birthdate);
+            if (AgeCalculator.isChild(birthdate)) children++; else adults++;
         }
 
         FirestationCoverageDto out = new FirestationCoverageDto(summaries, adults, children);
@@ -79,9 +79,9 @@ public class ReportingServiceImpl implements ReportingService {
 
         List<ChildAlertDto> children = new ArrayList<>();
         for (Person p : residents) {
-            int age = AgeCalculator.computeAge(
-                    Optional.ofNullable(recordOf(p)).map(MedicalRecord::getBirthdate).orElse(null));
-            if (age >= 0 && age <= 18) {
+            String birthdate = Optional.ofNullable(recordOf(p)).map(MedicalRecord::getBirthdate).orElse(null);
+            int age = AgeCalculator.computeAge(birthdate);
+            if (AgeCalculator.isChild(birthdate)) {
                 List<PersonSummaryDto> others = household.stream()
                         .filter(ps -> !(ps.firstName().equals(p.getFirstName())
                                 && ps.lastName().equals(p.getLastName())))

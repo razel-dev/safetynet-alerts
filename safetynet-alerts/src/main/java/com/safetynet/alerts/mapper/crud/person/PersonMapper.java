@@ -14,7 +14,7 @@ public interface PersonMapper {
 
     Person toEntity(PersonCreateDto dto);
 
-    // PUT complet : on n’autorise pas la MAJ de l’identité
+
     @Mapping(target = "firstName", ignore = true)
     @Mapping(target = "lastName",  ignore = true)
     void update(@MappingTarget Person target, PersonUpdateDto dto);
