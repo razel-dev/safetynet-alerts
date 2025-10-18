@@ -1,6 +1,6 @@
 package com.safetynet.alerts.dto.crud.person;
 
-import jakarta.validation.constraints.Email;
+
 import jakarta.validation.constraints.NotBlank;
 
 /** Payload de création d'une personne. */

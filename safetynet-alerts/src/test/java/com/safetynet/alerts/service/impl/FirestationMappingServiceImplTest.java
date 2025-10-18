@@ -3,6 +3,8 @@ package com.safetynet.alerts.service.impl;
 import com.safetynet.alerts.dto.crud.firestation.FirestationCreateDto;
 import com.safetynet.alerts.dto.crud.firestation.FirestationResponseDto;
 import com.safetynet.alerts.dto.crud.firestation.FirestationUpdateDto;
+import com.safetynet.alerts.exception.ConflictExeption;
+import com.safetynet.alerts.exception.NotFoundExeption;
 import com.safetynet.alerts.mapper.crud.firestation.FirestationCrudMapper;
 import com.safetynet.alerts.repository.DataRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,7 +47,7 @@ class FirestationMappingServiceImplTest {
         var dto = new FirestationCreateDto("10 Downing St", "1");
         when(repository.findStationByAddress("10 Downing St")).thenReturn(Optional.of("1"));
 
-        assertThrows(ConflictException.class, () -> service.create(dto));
+        assertThrows(ConflictExeption.class, () -> service.create(dto));
         verify(repository, never()).saveMapping(any(), any());
     }
 
@@ -66,7 +68,7 @@ class FirestationMappingServiceImplTest {
     void update_shouldThrowNotFound_whenAddressMissing() {
         when(repository.findStationByAddress("unknown")).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class,
+        assertThrows(NotFoundExeption.class,
                 () -> service.update("unknown", new FirestationUpdateDto("9")));
         verify(repository, never()).saveMapping(any(), any());
     }
@@ -84,7 +86,7 @@ class FirestationMappingServiceImplTest {
     void delete_shouldThrowNotFound_whenAddressMissing() {
         when(repository.findStationByAddress("unknown")).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> service.delete("unknown"));
+        assertThrows(NotFoundExeption.class, () -> service.delete("unknown"));
         verify(repository, never()).deleteMapping(any());
     }
 }

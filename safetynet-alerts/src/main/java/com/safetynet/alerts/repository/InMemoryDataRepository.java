@@ -38,6 +38,9 @@ public class InMemoryDataRepository implements DataRepository {
                 && norm(a.getLastName()).equals(norm(b.getLastName()));
     }
 
+    // ÉCRITURES -> COHÉRENCE DES INDEX
+    // Cette méthode (ré)indexe une personne dans TOUS les index dérivés.
+    // Invariant maintenu: après savePerson(), les vues par adresse, nom, ville/email et le snapshot global sont alignés.
     private void indexPerson(Person p) {
         // index principal
         personsByKey.put(key(p.getFirstName(), p.getLastName()), p);
@@ -226,19 +229,23 @@ public class InMemoryDataRepository implements DataRepository {
     // Person
     @Override
     public void savePerson(Person person) {
-        // upsert : désindexer l’éventuelle ancienne version
+        // ÉCRITURE COHÉRENTE :
+        // 1) si une version existe, on la retire de TOUS les index (deindexPerson),
+        // 2) on (ré)indexe la nouvelle version dans TOUS les index (indexPerson).
         findPerson(person.getFirstName(), person.getLastName()).ifPresent(this::deindexPerson);
         indexPerson(person);
     }
 
     @Override
     public void deletePerson(String firstName, String lastName) {
+        // ÉCRITURE COHÉRENTE (DELETE): on désindexe proprement partout si présent (idempotent).
         findPerson(firstName, lastName).ifPresent(this::deindexPerson);
     }
 
     // MedicalRecord
     @Override
     public void saveMedicalRecord(MedicalRecord mr) {
+        // ÉCRITURE COHÉRENTE: clé logique "first|last" normalisée → remplacement complet.
         medicalRecordByPersonKey.put(key(mr.getFirstName(), mr.getLastName()), mr);
     }
 
@@ -250,6 +257,10 @@ public class InMemoryDataRepository implements DataRepository {
     // Firestation mapping
     @Override
     public void saveMapping(String address, String station) {
+        // ÉCRITURE COHÉRENTE DU MAPPING:
+        // - met à jour stationByAddress[address],
+        // - si la station a changé, enlève l'adresse de l'ancien ensemble addressesByStation[old],
+        // - ajoute l'adresse dans le nouvel ensemble addressesByStation[new].
         final String a = norm(address);
         final String s = norm(station);
 

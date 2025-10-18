@@ -3,6 +3,8 @@ package com.safetynet.alerts.service.impl;
 import com.safetynet.alerts.dto.crud.medicalrecord.MedicalRecordCreateDto;
 import com.safetynet.alerts.dto.crud.medicalrecord.MedicalRecordResponseDto;
 import com.safetynet.alerts.dto.crud.medicalrecord.MedicalRecordUpdateDto;
+import com.safetynet.alerts.exception.ConflictExeption;
+import com.safetynet.alerts.exception.NotFoundExeption;
 import com.safetynet.alerts.mapper.crud.medicalrecord.MedicalRecordMapper;
 import com.safetynet.alerts.model.MedicalRecord;
 import com.safetynet.alerts.repository.DataRepository;
@@ -56,7 +58,7 @@ class MedicalRecordServiceImplTest {
         when(repository.findMedicalRecord("John", "Doe"))
                 .thenReturn(Optional.of(mock(MedicalRecord.class)));
 
-        assertThrows(ConflictException.class, () -> service.create(dto));
+        assertThrows(ConflictExeption.class, () -> service.create(dto));
 
         verify(repository, never()).saveMedicalRecord(any());
         verify(mapper, never()).toEntity(any());
@@ -85,7 +87,7 @@ class MedicalRecordServiceImplTest {
     void update_shouldThrowNotFound_whenRecordMissing() {
         when(repository.findMedicalRecord("Jane", "Unknown")).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class,
+        assertThrows(NotFoundExeption.class,
                 () -> service.update("Jane", "Unknown", mock(MedicalRecordUpdateDto.class)));
 
         verify(repository, never()).saveMedicalRecord(any());
@@ -107,7 +109,7 @@ class MedicalRecordServiceImplTest {
     void delete_shouldThrowNotFound_whenRecordMissing() {
         when(repository.findMedicalRecord("Jane", "Unknown")).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> service.delete("Jane", "Unknown"));
+        assertThrows(NotFoundExeption.class, () -> service.delete("Jane", "Unknown"));
 
         verify(repository, never()).deleteMedicalRecord(anyString(), anyString());
     }

@@ -33,7 +33,8 @@ public class DataLoader {
     public DataLoader(DataRepository repo, ObjectMapper om)
     { this.repo = repo; this.om = om; }
 
-    @PostConstruct
+    @PostConstruct // indique à Spring d’appeler la méthode load() automatiquement une fois le bean construit et toutes ses dépendances injectées, mais avant que l’application ne commence réellement à l’utiliser.
+
     void load() {
         try (InputStream is = getClass().getResourceAsStream(PATH))
         {

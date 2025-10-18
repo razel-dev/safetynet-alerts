@@ -19,20 +19,27 @@ import org.springframework.stereotype.Service;
 
 public class PersonServiceImpl implements PersonService {
 
-    private final DataRepository repo;
+    private final DataRepository repo;// Port de persistance
+
     private final PersonMapper personMapper;
 
     @Override
     public PersonResponseDto create(PersonCreateDto dto) {
         log.debug("[service] Person.create IN dto={}", dto);
-        repo.findPerson(dto.firstName(), dto.lastName()).ifPresent(p -> {
-            throw new ConflictExeption("Person already exists: " + dto.firstName() + " " + dto.lastName());
-        });
+        // Orchestration règle métier #1 : unicité de l'identité
+        // récupère prénom/nom du DTO et empêche la création d’un doublon en levant
+        // une exception de conflit si l’identité existe
+        ensurePersonNotExists(dto.firstName(), dto.lastName());
 
+        // Mapping compile-time DTO -> Entity (transformation de l'objet DTO (type PersonCreatDTO ici) en un autre objet, l'intité métier Person.
         Person entity = personMapper.toEntity(dto);
-        repo.savePerson(entity);
 
-        var out = personMapper.toResponse(entity);
+        // Persistance : càd que l’objet métier (l’entité) est écrit dans un support durable
+        repo.savePerson(entity);
+        log.info("[service] Person.create OUT id={} {}", dto.firstName(), dto.lastName());
+
+        // Mapping compile-time Entity -> DTO de réponse. - transforme l’entité métier Person en DTO de réponse PersonResponseDto, prêt à être renvoyé par l’API
+        PersonResponseDto out = personMapper.toResponse(entity);
         log.info("[service] Person.create OUT id={} {}", dto.firstName(), dto.lastName());
         return out;
     }
@@ -40,13 +47,15 @@ public class PersonServiceImpl implements PersonService {
     @Override
     public PersonResponseDto update(String firstName, String lastName, PersonUpdateDto dto) {
         log.debug("[service] Person.update IN id={}-{} dto={}", firstName, lastName, dto);
-        Person entity = repo.findPerson(firstName, lastName)
-                .orElseThrow(() -> new NotFoundExeption("Person not found: " + firstName + " " + lastName));
+        // Orchestration règle métier #2 : existence préalable
+        Person entity = loadExistingPerson(firstName, lastName);
 
+        // Orchestration règle métier #3 : identité immuable (garantie par le mapper qui ignore first/last)
         personMapper.update(entity, dto);   // identité ignorée par le mapper
         repo.savePerson(entity);
+        log.info("[service] Person.update OUT id={}-{}", firstName, lastName);
 
-        var out = personMapper.toResponse(entity);
+        PersonResponseDto out = personMapper.toResponse(entity);
         log.info("[service] Person.update OUT id={}-{}", firstName, lastName);
         return out;
     }
@@ -54,10 +63,38 @@ public class PersonServiceImpl implements PersonService {
     @Override
     public void delete(String firstName, String lastName) {
         log.debug("[service] Person.delete IN id={}-{}", firstName, lastName);
+        // Orchestration règle métier #2 (variante) : vérifier l'existence avant suppression
+        ensurePersonExists(firstName, lastName);
+
+        repo.deletePerson(firstName, lastName);
+        log.info("[service] Person.delete OUT id={}-{}", firstName, lastName);
+    }
+
+    // ----- Méthodes privées d'orchestration des règles métier -----
+
+    /**
+     * Règle d'unicité : empêche la création si l'identité existe déjà.
+     */
+    private void ensurePersonNotExists(String firstName, String lastName) {
+        repo.findPerson(firstName, lastName).ifPresent(p -> {
+            throw new ConflictExeption("Person already exists: " + firstName + " " + lastName);
+        });
+    }
+
+    /**
+     * Règle d'existence : lève 404 si la personne est absente.
+     */
+    private void ensurePersonExists(String firstName, String lastName) {
         if (repo.findPerson(firstName, lastName).isEmpty()) {
             throw new NotFoundExeption("Person not found: " + firstName + " " + lastName);
         }
-        repo.deletePerson(firstName, lastName);
-        log.info("[service] Person.delete OUT id={}-{}", firstName, lastName);
+    }
+
+    /**
+     * Charge l'entité existante ou lève 404 (utile pour update).
+     */
+    private Person loadExistingPerson(String firstName, String lastName) {
+        return repo.findPerson(firstName, lastName)
+                .orElseThrow(() -> new NotFoundExeption("Person not found: " + firstName + " " + lastName));
     }
 }

@@ -3,6 +3,8 @@ package com.safetynet.alerts.service.impl;
 import com.safetynet.alerts.dto.crud.person.PersonCreateDto;
 import com.safetynet.alerts.dto.crud.person.PersonResponseDto;
 import com.safetynet.alerts.dto.crud.person.PersonUpdateDto;
+import com.safetynet.alerts.exception.ConflictExeption;
+import com.safetynet.alerts.exception.NotFoundExeption;
 import com.safetynet.alerts.mapper.crud.person.PersonMapper;
 import com.safetynet.alerts.model.Person;
 import com.safetynet.alerts.repository.DataRepository;
@@ -55,7 +57,7 @@ class PersonServiceImplTest {
         when(dto.lastName()).thenReturn("Doe");
         when(repository.findPerson("John", "Doe")).thenReturn(Optional.of(mock(Person.class)));
 
-        assertThrows(ConflictException.class, () -> service.create(dto));
+        assertThrows(ConflictExeption.class, () -> service.create(dto));
 
         verify(repository, never()).savePerson(any());
         verify(mapper, never()).toEntity(any());
@@ -84,7 +86,7 @@ class PersonServiceImplTest {
     void update_shouldThrowNotFound_whenPersonMissing() {
         when(repository.findPerson("Jane", "Unknown")).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class,
+        assertThrows(NotFoundExeption.class,
                 () -> service.update("Jane", "Unknown", mock(PersonUpdateDto.class)));
 
         verify(repository, never()).savePerson(any());
@@ -105,7 +107,7 @@ class PersonServiceImplTest {
     void delete_shouldThrowNotFound_whenPersonMissing() {
         when(repository.findPerson("Jane", "Unknown")).thenReturn(Optional.empty());
 
-        assertThrows(NotFoundException.class, () -> service.delete("Jane", "Unknown"));
+        assertThrows(NotFoundExeption.class, () -> service.delete("Jane", "Unknown"));
 
         verify(repository, never()).deletePerson(anyString(), anyString());
     }
