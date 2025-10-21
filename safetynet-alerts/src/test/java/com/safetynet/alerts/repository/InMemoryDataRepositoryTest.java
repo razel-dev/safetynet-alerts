@@ -17,8 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests unitaires de l’implémentation en mémoire du dépôt {@link InMemoryDataRepository}.
 
  * Objectifs principaux validés par ces tests:
- * - Initialisation complète via {@link DataSet} (remplacement de l’état et indexation).
- * - Requêtes de lecture robustes: casse/espaces tolérés, jamais null, Optional pour absences.
+ *  Initialisation complète via {@link DataSet} (remplacement de l’état et indexation).
  * - Collections retournées non modifiables (instantanés défensifs).
  * - Cohérence des « index dérivés » après opérations d’écriture (CRUD) sur dossiers médicaux
  *   et mapping adresse → caserne.

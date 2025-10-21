@@ -38,7 +38,7 @@ class DataLoaderTest {
         DataLoader loader = new DataLoader(repo, om);
         loader.load();
 
-        // Vérifie que init a été appelé avec le DataSet parsé
+        // Vérifie que init a été appelé avec le DataSet
         ArgumentCaptor<DataSet> captor = ArgumentCaptor.forClass(DataSet.class);
         verify(repo).init(captor.capture());
 
