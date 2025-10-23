@@ -7,9 +7,8 @@ import jakarta.annotation.PostConstruct;                  // Annotation pour ex�
 
 import lombok.extern.slf4j.Slf4j;
 
-
 import org.springframework.stereotype.Component;          // Marque la classe comme bean géré par Spring (détection de composants)
-import org.springframework.boot.autoconfigure.condition.ConditionalOnResource; // Ajout: conditionner la création du bean à la présence du fichier
+import org.springframework.boot.autoconfigure.condition.ConditionalOnResource;
 
 import java.io.InputStream;
 import java.util.Collection;
@@ -23,7 +22,7 @@ import java.util.Collection;
  */
 @Slf4j
 @Component
-@ConditionalOnResource(resources = "classpath:/data.json") // Le bean n’est créé que si data.json est présent
+@ConditionalOnResource(resources = "classpath:/data.json")
 
 public class DataLoader {
     private final DataRepository repo;

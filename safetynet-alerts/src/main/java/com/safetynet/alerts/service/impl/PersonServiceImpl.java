@@ -31,7 +31,7 @@ public class PersonServiceImpl implements PersonService {
         // une exception de conflit si l’identité existe
         ensurePersonNotExists(dto.firstName(), dto.lastName());
 
-        // Mapping compile-time DTO -> Entity (transformation de l'objet DTO (type PersonCreatDTO ici) en un autre objet, l'intité métier Person.
+        // Mapping compile-time DTO -> Entity (transformation de l'objet DTO (type PersonCreatDTO ici) en un autre objet, l'entité métier Person.
         Person entity = personMapper.toEntity(dto);
 
         // Persistance : càd que l’objet métier (l’entité) est écrit dans un support durable

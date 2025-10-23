@@ -24,9 +24,11 @@ class PersonServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        repository = mock(DataRepository.class);
-        mapper = mock(PersonMapper.class);
-        service = new PersonServiceImpl(repository, mapper);
+        repository = mock(DataRepository.class); //Ils remplacent les dépendances réelles
+
+        mapper = mock(PersonMapper.class);// Ils remplacent les dépendances réelles
+
+        service = new PersonServiceImpl(repository, mapper); // objet reel testé
     }
 
     @Test

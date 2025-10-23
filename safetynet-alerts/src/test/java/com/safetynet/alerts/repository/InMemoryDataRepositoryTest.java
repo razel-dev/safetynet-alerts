@@ -33,7 +33,7 @@ class InMemoryDataRepositoryTest {
     private Person janeDoe;
     private Person aliceSmith;
 
-    @BeforeEach
+    @BeforeEach // methode qui s'execute avant chaque test.
     void setUp() {
         // Arrange: on prépare un DataSet minimal mais représentatif
         repo = new InMemoryDataRepository();
@@ -74,7 +74,7 @@ class InMemoryDataRepositoryTest {
     }
 
     /**
-     * Vérifie que l’initialisation charge les données et construit des vues/collections non modifiables,
+     * Vérifie que l’initialisation charge les données et construit des collections non modifiables,
      * et que les recherches de base fonctionnent (adresses par station, station par adresse, etc.).
      */
     @Test
