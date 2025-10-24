@@ -14,9 +14,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 
 
-@RestController
+@RestController //endpoints REST.
 @RequestMapping(path = "/person", produces = MediaType.APPLICATION_JSON_VALUE) // <-- Le contrôleur parle JSON en sortie
-@RequiredArgsConstructor
+@RequiredArgsConstructor// injection de dependance par le constructeur
 @Validated
 public class PersonController {
 
